@@ -10,7 +10,7 @@ namespace UFW.Net
         /// Get all the rules currently configured with ufw
         /// </summary>
         /// <returns></returns>
-        public List<UfwRule> GetRules()
+        public static List<UfwRule> GetRules()
         {
             var result = new List<UfwRule>();
             var ufwResult = LocalCommand.Execute("ufw status numbered");
@@ -30,9 +30,9 @@ namespace UFW.Net
         /// Delete the rule on the given index
         /// </summary>
         /// <param name="rule"></param>
-        public void DeleteRule(UfwRule rule)
+        public static void DeleteRule(UfwRule rule)
         {
-            LocalCommand.Execute($"ufw delete {rule.RuleIndex}");
+            LocalCommand.Execute($"ufw --force delete {rule.RuleIndex}");
         }
 
         /// <summary>
@@ -40,7 +40,7 @@ namespace UFW.Net
         /// </summary>
         /// <param name="fromIP"></param>
         /// <param name="port"></param>
-        public void AllowInbound(int port)
+        public static void AllowInbound(int port)
         {
             LocalCommand.Execute($"ufw allow {port}");
         }
@@ -50,7 +50,7 @@ namespace UFW.Net
         /// </summary>
         /// <param name="fromIP"></param>
         /// <param name="port"></param>
-        public void AllowInbound(string fromIP, int port)
+        public static void AllowInbound(string fromIP, int port)
         {
             LocalCommand.Execute($"ufw allow from {fromIP} to any port {port}");
         }
@@ -59,7 +59,7 @@ namespace UFW.Net
         /// Deny connections from the given IP
         /// </summary>
         /// <param name="fromIP"></param>
-        public void DenyInbound(string fromIP)
+        public static void DenyInbound(string fromIP)
         {
             LocalCommand.Execute($"ufw deny from {fromIP}");
         }
@@ -68,7 +68,7 @@ namespace UFW.Net
         /// <summary>
         /// Enables the ufw firewall
         /// </summary>
-        public void Enable()
+        public static void Enable()
         {
             LocalCommand.Execute("ufw enable");
         }
@@ -76,7 +76,7 @@ namespace UFW.Net
         /// <summary>
         /// Enables the ufw firewall
         /// </summary>
-        public void Disable()
+        public static void Disable()
         {
             LocalCommand.Execute("ufw enable");
         }

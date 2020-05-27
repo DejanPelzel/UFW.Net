@@ -62,6 +62,15 @@ namespace UFW.Net
         /// </summary>
         public string Source { get; set; }
 
+
+        /// <summary>
+        /// Create a new instance of the UfwRule class linked to the given collection
+        /// </summary>
+        /// <param name="masterCollection"></param>
+        internal UfwRule()
+        {
+        }
+
         /// <summary>
         /// Attempt to parse the rule from the Ufw response line
         /// </summary>
