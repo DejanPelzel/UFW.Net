@@ -78,103 +78,119 @@ namespace UFW.Net
         /// <returns></returns>
         public static UfwRule TryParse(string line)
         {
-            line = line.Trim();
-            if(!line.StartsWith('['))
+            try
             {
-                return null;
-            }
-
-            while (line.Contains("   "))
-                line = line.Replace("   ", "  ");
-
-            var data = line.Split("  ");
-
-
-
-            var rule = new UfwRule();
-
-            // Parse the index
-            var ruleIndex = line.Remove(0, 1);
-            ruleIndex = ruleIndex.Remove(ruleIndex.IndexOf(']')).Trim();
-            rule.RuleIndex = int.Parse(ruleIndex);
-
-            // Parse the port & protocol
-            var portAndProtocol = data[0];
-            portAndProtocol = portAndProtocol.Remove(0, portAndProtocol.IndexOf(']') + 1);
-            portAndProtocol = portAndProtocol.Trim();
-            if(portAndProtocol.IndexOf(' ') != -1)
-            {
-                portAndProtocol = portAndProtocol.Remove(portAndProtocol.IndexOf(' '));
-            }
-            if(portAndProtocol.Equals("anywhere", StringComparison.OrdinalIgnoreCase))
-            {
-                rule.Port = 0;
-                rule.Protocol = RuleProtocol.Any;
-            }
-            else if(portAndProtocol.Contains("/"))
-            {
-                var portAndProtocolData = portAndProtocol.Split('/');
-                rule.Port = int.Parse(portAndProtocolData[0]);
-                switch(portAndProtocolData[1])
+                line = line.Trim();
+                if (!line.StartsWith('['))
                 {
-                    case "tcp":
-                        rule.Protocol = RuleProtocol.TCP;
+                    return null;
+                }
+
+                while (line.Contains("   "))
+                    line = line.Replace("   ", "  ");
+
+                var data = line.Split("  ");
+
+
+
+                var rule = new UfwRule();
+
+                // Parse the index
+                var ruleIndex = line.Remove(0, 1);
+                ruleIndex = ruleIndex.Remove(ruleIndex.IndexOf(']')).Trim();
+                rule.RuleIndex = int.Parse(ruleIndex);
+
+                // Parse the port & protocol
+                var portAndProtocol = data[0];
+                portAndProtocol = portAndProtocol.Remove(0, portAndProtocol.IndexOf(']') + 1);
+                portAndProtocol = portAndProtocol.Trim();
+                if (portAndProtocol.IndexOf(' ') != -1)
+                {
+                    portAndProtocol = portAndProtocol.Remove(portAndProtocol.IndexOf(' '));
+                }
+                if (portAndProtocol.Equals("anywhere", StringComparison.OrdinalIgnoreCase))
+                {
+                    rule.Port = 0;
+                    rule.Protocol = RuleProtocol.Any;
+                }
+                else if (portAndProtocol.Contains("/"))
+                {
+                    var portAndProtocolData = portAndProtocol.Split('/');
+                    rule.Port = int.Parse(portAndProtocolData[0]);
+                    switch (portAndProtocolData[1])
+                    {
+                        case "tcp":
+                            rule.Protocol = RuleProtocol.TCP;
+                            break;
+                        case "udp":
+                            rule.Protocol = RuleProtocol.UDP;
+                            break;
+                        default:
+                            rule.Protocol = RuleProtocol.Any;
+                            break;
+                    }
+                }
+                else
+                {
+                    var portData = portAndProtocol.Split(' ');
+                    if(portData[0].ToLower() == "ssh")
+                    {
+                        rule.Port = 0;
+                    }
+                    else
+                    {
+                        int port = 0;
+                        int.TryParse(portData[0], out port);
+
+                        rule.Port = port;
+                    }
+                    
+                    rule.Protocol = RuleProtocol.Any;
+                }
+
+                // Parse the type
+                var type = data[1];
+                type = type.Trim();
+
+                switch (type)
+                {
+                    case "ALLOW":
+                        rule.Type = RuleType.Allow;
                         break;
-                    case "udp":
-                        rule.Protocol = RuleProtocol.UDP;
+                    case "ALLOW IN":
+                        rule.Type = RuleType.AllowIn;
                         break;
-                    default:
-                        rule.Protocol = RuleProtocol.Any;
+                    case "ALLOW OUT":
+                        rule.Type = RuleType.AllowOut;
+                        break;
+                    case "DENY":
+                        rule.Type = RuleType.Deny;
+                        break;
+                    case "DENY IN":
+                        rule.Type = RuleType.DenyIn;
+                        break;
+                    case "DENY OUT":
+                        rule.Type = RuleType.DenyOut;
                         break;
                 }
-            }
-            else
-            {
-                var portData = portAndProtocol.Split(' ');
 
-                rule.Port = int.Parse(portData[0]);
-                rule.Protocol = RuleProtocol.Any;
-            }
+                var source = data[2];
+                if (source.ToLower().StartsWith("anywhere"))
+                {
+                    rule.Source = source;
+                    rule.SourceType = SourceType.Anywhere;
+                }
+                else
+                {
+                    rule.SourceType = SourceType.Address;
+                    rule.Source = source;
+                }
 
-            // Parse the type
-            var type = data[1];
-            type = type.Trim();
-
-            switch(type)
-            {
-                case "ALLOW":
-                    rule.Type = RuleType.Allow;
-                    break;
-                case "ALLOW IN":
-                    rule.Type = RuleType.AllowIn;
-                    break;
-                case "ALLOW OUT":
-                    rule.Type = RuleType.AllowOut;
-                    break;
-                case "DENY":
-                    rule.Type = RuleType.Deny;
-                    break;
-                case "DENY IN":
-                    rule.Type = RuleType.DenyIn;
-                    break;
-                case "DENY OUT":
-                    rule.Type = RuleType.DenyOut;
-                    break;
+                return rule;
             }
-
-            var source = data[2];
-            if(source.ToLower().StartsWith("anywhere"))
-            {
-                rule.Source = source;
-                rule.SourceType = SourceType.Anywhere;
+            catch {
+                return null;
             }
-            else
-            {
-                rule.SourceType = SourceType.Address;
-                rule.Source = source;
-            }
-
-            return rule;
         }
     }
 }
