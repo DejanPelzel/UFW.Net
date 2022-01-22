@@ -45,12 +45,7 @@ namespace UFW.Net
         /// <summary>
         /// Gets or sets the port that the rule covers
         /// </summary>
-        public int Port { get; set; }
-
-        /// <summary>
-        /// Gets or sets the source to where the rule is applied
-        /// </summary>
-        public string From { get; set; }
+        public string Port { get; set; }
 
         /// <summary>
         /// Gets or sety the source type of the rule
@@ -110,13 +105,13 @@ namespace UFW.Net
                 }
                 if (portAndProtocol.Equals("anywhere", StringComparison.OrdinalIgnoreCase))
                 {
-                    rule.Port = 0;
+                    rule.Port = string.Empty;
                     rule.Protocol = RuleProtocol.Any;
                 }
                 else if (portAndProtocol.Contains("/"))
                 {
                     var portAndProtocolData = portAndProtocol.Split('/');
-                    rule.Port = int.Parse(portAndProtocolData[0]);
+                    rule.Port = portAndProtocolData[0];
                     switch (portAndProtocolData[1])
                     {
                         case "tcp":
@@ -133,18 +128,7 @@ namespace UFW.Net
                 else
                 {
                     var portData = portAndProtocol.Split(' ');
-                    if(portData[0].ToLower() == "ssh")
-                    {
-                        rule.Port = 0;
-                    }
-                    else
-                    {
-                        int port = 0;
-                        int.TryParse(portData[0], out port);
-
-                        rule.Port = port;
-                    }
-                    
+                    rule.Port = portData[0];
                     rule.Protocol = RuleProtocol.Any;
                 }
 

@@ -49,22 +49,22 @@ namespace UFW.Net.Tests
         public void TestParsePort()
         {
             var rule = UfwRule.TryParse("[ 2] 80/tcp                     ALLOW IN    Anywhere             ");
-            Assert.AreEqual(80, rule.Port);
+            Assert.AreEqual("80", rule.Port);
 
             rule = UfwRule.TryParse("[ 5] 7440/udp                   ALLOW IN    112.112.227.15       ");
-            Assert.AreEqual(7440, rule.Port);
+            Assert.AreEqual("7440", rule.Port);
 
             rule = UfwRule.TryParse("[ 7] 311                       ALLOW IN    59.119.22.22     ");
-            Assert.AreEqual(311, rule.Port);
+            Assert.AreEqual("311", rule.Port);
 
             rule = UfwRule.TryParse("[ 7] Anywhere                       ALLOW IN    121.219.12.118     ");
-            Assert.AreEqual(0, rule.Port);
+            Assert.AreEqual(string.Empty, rule.Port);
 
             rule = UfwRule.TryParse("[ 8] 22/tcp (v6)                ALLOW IN    Anywhere (v6) ");
-            Assert.AreEqual(22, rule.Port);
+            Assert.AreEqual("22", rule.Port);
 
             rule = UfwRule.TryParse("[ 8] 33 (v6)                ALLOW IN    Anywhere (v6) ");
-            Assert.AreEqual(33, rule.Port);
+            Assert.AreEqual("33", rule.Port);
 
             Assert.Pass();
         }
