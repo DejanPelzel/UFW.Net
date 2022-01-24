@@ -34,6 +34,7 @@ namespace UFW.Net
             ProcessStartInfo startInfo = new ProcessStartInfo();
             startInfo.CreateNoWindow = false;
             startInfo.UseShellExecute = false;
+            startInfo.RedirectStandardError = true;
             startInfo.RedirectStandardOutput = true;
             startInfo.FileName = command;
             if (!string.IsNullOrWhiteSpace(arguments))
@@ -42,13 +43,24 @@ namespace UFW.Net
             }
             using (Process exeProcess = Process.Start(startInfo))
             {
-                using (StreamReader reader = exeProcess.StandardOutput)
-                {
-                    string output = reader.ReadToEnd();
-                    exeProcess.WaitForExit();
+                string output;
 
-                    return output.Split("\n");
+                using (StreamReader reader = exeProcess.StandardError)
+                {
+                    output = reader.ReadToEnd();
                 }
+
+                if (string.IsNullOrEmpty(output))
+                {
+                    using (StreamReader reader = exeProcess.StandardOutput)
+                    {
+                        output = reader.ReadToEnd();
+                    }
+                }
+
+                exeProcess.WaitForExit();
+
+                return output.Split("\n");
             }
         }
     }

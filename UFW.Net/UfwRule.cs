@@ -57,7 +57,11 @@ namespace UFW.Net
         /// </summary>
         public string Source { get; set; }
 
-
+        /// <summary>
+        /// Gets or sets the comment of the rule
+        /// </summary>
+        public string Comment { get; set; }
+        
         /// <summary>
         /// Create a new instance of the UfwRule class linked to the given collection
         /// </summary>
@@ -108,7 +112,7 @@ namespace UFW.Net
                     rule.Port = string.Empty;
                     rule.Protocol = RuleProtocol.Any;
                 }
-                else if (portAndProtocol.Contains("/"))
+                else if (portAndProtocol.Contains('/'))
                 {
                     var portAndProtocolData = portAndProtocol.Split('/');
                     rule.Port = portAndProtocolData[0];
@@ -158,6 +162,8 @@ namespace UFW.Net
                         break;
                 }
 
+
+                // Parse the source
                 var source = data[2];
                 if (source.ToLower().StartsWith("anywhere"))
                 {
@@ -169,6 +175,14 @@ namespace UFW.Net
                     rule.SourceType = SourceType.Address;
                     rule.Source = source;
                 }
+
+                // Parse the comment
+                if(data.Length > 3)
+                {
+                    var comment = data[3].TrimStart('#').Trim();
+                    rule.Comment = comment;
+                }
+
 
                 return rule;
             }

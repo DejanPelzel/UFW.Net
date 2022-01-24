@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -50,27 +51,37 @@ namespace UFW.Net
         /// </summary>
         /// <param name="port"></param>
         /// <param name="proto"></param>
-        public static void AllowInbound(string port, RuleProtocol proto)
+        public static void AllowInbound(string port, RuleProtocol proto, string comment = "")
         {
+            string command = $"ufw allow {port}";
+
             switch (proto)
             {
                 case RuleProtocol.Any:
-                    if (!port.Contains(':'))
+                    if (port.Contains(',') && !port.Contains(':'))
                     {
-                        LocalCommand.Execute($"ufw allow {port}");
-                    }
-                    else
-                    {
-                        LocalCommand.Execute($"ufw allow {port}/tcp");
-                        LocalCommand.Execute($"ufw allow {port}/udp");
+                        AllowInbound(port, RuleProtocol.TCP, comment);
+                        AllowInbound(port, RuleProtocol.UDP, comment);
                     }
                     break;
                 case RuleProtocol.TCP:
-                    LocalCommand.Execute($"ufw allow {port}/tcp");
+                    command += "/tcp";
                     break;
                 case RuleProtocol.UDP:
-                    LocalCommand.Execute($"ufw allow {port}/udp");
+                    command += "/udp";
                     break;
+            }
+
+            if (!string.IsNullOrEmpty(comment))
+            {
+                command += $" comment {comment}";
+            }
+
+            string[] message = LocalCommand.Execute(command);
+
+            if (message.Length > 0 && message[0].StartsWith("ERROR:"))
+            {
+                throw new UfwException(message[0][6..]);
             }
         }
 
@@ -79,19 +90,30 @@ namespace UFW.Net
         /// </summary>
         /// <param name="fromIP"></param>
         /// <param name="port"></param>
-        public static void AllowInbound(string fromIP, string port, RuleProtocol proto)
+        public static void AllowInbound(string fromIP, string port, RuleProtocol proto, string comment = "")
         {
+            string command = $"ufw allow from {fromIP} to any port {port}";
+
             switch (proto)
             {
-                case RuleProtocol.Any:
-                    LocalCommand.Execute($"ufw allow from {fromIP} to any port {port}");
-                    break;
                 case RuleProtocol.TCP:
-                    LocalCommand.Execute($"ufw allow from {fromIP} to any port {port} proto tcp");
+                    command += $" proto tcp";
                     break;
                 case RuleProtocol.UDP:
-                    LocalCommand.Execute($"ufw allow from {fromIP} to any port {port} proto udp");
+                    command += $" proto udp";
                     break;
+            }
+
+            if (!string.IsNullOrEmpty(comment))
+            {
+                command += $" comment {comment}";
+            }
+
+            string[] message = LocalCommand.Execute(command);
+
+            if (message.Length > 0 && message[0].StartsWith("ERROR:"))
+            {
+                throw new UfwException(message[0][6..]);
             }
         }
 
@@ -163,6 +185,25 @@ namespace UFW.Net
                     return;
                 }
             }
+        }
+
+        /// <summary>
+        /// Import the ufw config 
+        /// </summary>
+        public static void Import(string content, bool ipv6)
+        {
+            string file = $"/etc/ufw/{(ipv6 ? "user6" : "user")}.rules";
+            File.WriteAllText(file, content);
+        }
+
+        /// <summary>
+        /// Export the ufw config 
+        /// </summary>
+        public static string Export(bool ipv6)
+        {
+            string file = $"/etc/ufw/{(ipv6 ? "user6" : "user")}.rules";
+            string content = File.ReadAllText(file);
+            return content;
         }
     }
 }
