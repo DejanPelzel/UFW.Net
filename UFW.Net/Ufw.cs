@@ -173,18 +173,7 @@ namespace UFW.Net
         /// </summary>
         public static void DisableIPv6()
         {
-            string file = "/etc/default/ufw";
-            string[] content = File.ReadAllLines(file);
-
-            for (int i = 0; i < content.Length; i++)
-            {
-                if (content[i].StartsWith("IPV6=yes"))
-                {
-                    content[i] = $"IPV6=no";
-                    File.WriteAllLines(file, content);
-                    return;
-                }
-            }
+            LocalCommand.Execute("sed -i '/IPV6/s/=.*/=no/' /etc/default/ufw");
         }
 
         /// <summary>
@@ -202,8 +191,7 @@ namespace UFW.Net
         public static string Export(bool ipv6)
         {
             string file = $"/etc/ufw/{(ipv6 ? "user6" : "user")}.rules";
-            string content = File.ReadAllText(file);
-            return content;
+            return File.ReadAllText(file);
         }
     }
 }
