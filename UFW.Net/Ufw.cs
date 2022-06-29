@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace UFW.Net
 {
@@ -15,10 +15,10 @@ namespace UFW.Net
         {
             var result = new List<UfwRule>();
             var ufwResult = LocalCommand.Execute("ufw status numbered");
-            foreach(var line in ufwResult)
+            foreach (var line in ufwResult)
             {
                 var rule = UfwRule.TryParse(line); ;
-                if(rule != null)
+                if (rule != null)
                 {
                     result.Add(rule);
                 }
@@ -49,12 +49,40 @@ namespace UFW.Net
         /// <summary>
         /// Allow inbound connections from the specific port
         /// </summary>
-        /// <param name="fromIP"></param>
         /// <param name="port"></param>
-        public static void AllowInbound(int port)
+        /// <param name="proto"></param>
+        public static void AllowInbound(string port, RuleProtocol proto, string comment = "")
         {
-            Console.WriteLine($"ufw allow {port}");
-            LocalCommand.Execute($"ufw allow {port}");
+            string command = $"ufw allow {port}";
+
+            switch (proto)
+            {
+                case RuleProtocol.Any:
+                    if (port.Contains(',') && !port.Contains(':'))
+                    {
+                        AllowInbound(port, RuleProtocol.TCP, comment);
+                        AllowInbound(port, RuleProtocol.UDP, comment);
+                    }
+                    break;
+                case RuleProtocol.TCP:
+                    command += "/tcp";
+                    break;
+                case RuleProtocol.UDP:
+                    command += "/udp";
+                    break;
+            }
+
+            if (!string.IsNullOrEmpty(comment))
+            {
+                command += $" comment {comment}";
+            }
+
+            string[] message = LocalCommand.Execute(command);
+
+            if (message.Length > 0 && message[0].StartsWith("ERROR:"))
+            {
+                throw new UfwException(message[0][6..]);
+            }
         }
 
         /// <summary>
@@ -62,10 +90,40 @@ namespace UFW.Net
         /// </summary>
         /// <param name="fromIP"></param>
         /// <param name="port"></param>
-        public static void AllowInbound(string fromIP, int port)
+        public static void AllowInbound(string fromIP, string port, RuleProtocol proto, string comment = "")
         {
-            Console.WriteLine($"ufw allow from {fromIP} to any port {port}");
-            LocalCommand.Execute($"ufw allow from {fromIP} to any port {port}");
+            string command = $"ufw allow from {fromIP} to any port {port}";
+
+            switch (proto)
+            {
+                case RuleProtocol.TCP:
+                    command += $" proto tcp";
+                    break;
+                case RuleProtocol.UDP:
+                    command += $" proto udp";
+                    break;
+            }
+
+            if (!string.IsNullOrEmpty(comment))
+            {
+                command += $" comment {comment}";
+            }
+
+            string[] message = LocalCommand.Execute(command);
+
+            if (message.Length > 0 && message[0].StartsWith("ERROR:"))
+            {
+                throw new UfwException(message[0][6..]);
+            }
+        }
+
+        /// <summary>
+        /// Allow service profile
+        /// </summary>
+        /// <param name="profile"></param>
+        public static void AllowService(string service)
+        {
+            LocalCommand.Execute($"ufw allow {service}");
         }
 
         /// <summary>
@@ -92,6 +150,48 @@ namespace UFW.Net
         public static void Disable()
         {
             LocalCommand.Execute("ufw disable");
+        }
+
+        /// <summary>
+        /// Reset the ufw firewall
+        /// </summary>
+        public static void Reset()
+        {
+            LocalCommand.Execute("ufw --force reset");
+        }
+
+        /// <summary>
+        /// Shutdown the ufw logging
+        /// </summary>
+        public static void ShutdownLogging()
+        {
+            LocalCommand.Execute("ufw logging off");
+        }
+
+        /// <summary>
+        /// Disable the ufw IPv6 support
+        /// </summary>
+        public static void DisableIPv6()
+        {
+            LocalCommand.Execute("sed -i '/IPV6/s/=.*/=no/' /etc/default/ufw");
+        }
+
+        /// <summary>
+        /// Import the ufw config 
+        /// </summary>
+        public static void Import(string content, bool ipv6)
+        {
+            string file = $"/etc/ufw/{(ipv6 ? "user6" : "user")}.rules";
+            File.WriteAllText(file, content);
+        }
+
+        /// <summary>
+        /// Export the ufw config 
+        /// </summary>
+        public static string Export(bool ipv6)
+        {
+            string file = $"/etc/ufw/{(ipv6 ? "user6" : "user")}.rules";
+            return File.ReadAllText(file);
         }
     }
 }
